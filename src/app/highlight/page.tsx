@@ -1,103 +1,158 @@
-import Image from "next/image";
+"use client"
 
-export default function Home() {
+import { useState } from "react"
+import { useTeam } from "@/contexts/team-context"
+import HighlightCard from "@/components/highlight-card"
+import type { Highlight } from "@/types"
+import { Search } from "lucide-react"
+
+// Mock highlights data
+const mockHighlights: Highlight[] = [
+  {
+    id: "1",
+    title: "SSG 랜더스 9회말 극적인 역전승! 최정 결승 홈런",
+    thumbnail: "/placeholder.svg?height=180&width=320",
+    videoUrl: "https://youtube.com/watch?v=example1",
+    date: "2025-01-08",
+    views: 125000,
+    category: "recent",
+    teamCode: "SSG",
+  },
+  {
+    id: "2",
+    title: "이승엽 레전드 홈런 모음집 - KBO 역사상 최고의 순간들",
+    thumbnail: "/placeholder.svg?height=180&width=320",
+    videoUrl: "https://youtube.com/watch?v=example2",
+    date: "2025-01-07",
+    views: 289000,
+    category: "legend",
+  },
+  {
+    id: "3",
+    title: "SSG vs LG 하이라이트 - 박병호 3타점 맹활약",
+    thumbnail: "/placeholder.svg?height=180&width=320",
+    videoUrl: "https://youtube.com/watch?v=example3",
+    date: "2025-01-06",
+    views: 67000,
+    category: "recent",
+    teamCode: "SSG",
+  },
+  {
+    id: "4",
+    title: "한국시리즈 명장면 - 감동의 순간들",
+    thumbnail: "/placeholder.svg?height=180&width=320",
+    videoUrl: "https://youtube.com/watch?v=example4",
+    date: "2025-01-05",
+    views: 234000,
+    category: "legend",
+  },
+  {
+    id: "5",
+    title: "KIA 타이거즈 완벽한 더블플레이 모음",
+    thumbnail: "/placeholder.svg?height=180&width=320",
+    videoUrl: "https://youtube.com/watch?v=example5",
+    date: "2025-01-04",
+    views: 45000,
+    category: "recent",
+    teamCode: "KIA",
+  },
+  {
+    id: "6",
+    title: "LG 트윈스 역대 최고의 순간들",
+    thumbnail: "/placeholder.svg?height=180&width=320",
+    videoUrl: "https://youtube.com/watch?v=example6",
+    date: "2025-01-03",
+    views: 156000,
+    category: "legend",
+    teamCode: "LG",
+  },
+]
+
+export default function HighlightsPage() {
+  const { selectedTeam } = useTeam()
+  const [activeCategory, setActiveCategory] = useState<"all" | "recent" | "legend" | "favorite">("all")
+  const [searchQuery, setSearchQuery] = useState("")
+  const [favorites, setFavorites] = useState<string[]>([])
+
+  const categories = [
+    { key: "all" as const, label: "전체", count: mockHighlights.length },
+    { key: "recent" as const, label: "최신", count: mockHighlights.filter((h) => h.category === "recent").length },
+    { key: "legend" as const, label: "레전드", count: mockHighlights.filter((h) => h.category === "legend").length },
+    { key: "favorite" as const, label: "즐겨찾기", count: favorites.length },
+  ]
+
+  const filteredHighlights = mockHighlights.filter((highlight) => {
+    // Category filter
+    if (activeCategory === "favorite") {
+      if (!favorites.includes(highlight.id)) return false
+    } else if (activeCategory !== "all") {
+      if (highlight.category !== activeCategory) return false
+    }
+
+    // Search filter
+    if (searchQuery) {
+      return highlight.title.toLowerCase().includes(searchQuery.toLowerCase())
+    }
+
+    return true
+  })
+
+  const toggleFavorite = (id: string) => {
+    setFavorites((prev) => (prev.includes(id) ? prev.filter((fav) => fav !== id) : [...prev, id]))
+  }
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* Header */}
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900 mb-4">하이라이트</h1>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+        {/* Search Bar */}
+        <div className="relative max-w-md">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+          <input
+            type="text"
+            placeholder="하이라이트 검색..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
+      </div>
+
+      {/* Category Tabs */}
+      <div className="flex flex-wrap gap-2 mb-8">
+        {categories.map((category) => (
+          <button
+            key={category.key}
+            onClick={() => setActiveCategory(category.key)}
+            className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+              activeCategory === category.key ? "text-white" : "text-gray-600 bg-gray-100 hover:bg-gray-200"
+            }`}
+            style={activeCategory === category.key ? { backgroundColor: selectedTeam.color } : {}}
+          >
+            {category.label} ({category.count})
+          </button>
+        ))}
+      </div>
+
+      {/* Highlights Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        {filteredHighlights.map((highlight) => (
+          <HighlightCard
+            key={highlight.id}
+            highlight={highlight}
+            onToggleFavorite={toggleFavorite}
+            isFavorite={favorites.includes(highlight.id)}
           />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+        ))}
+      </div>
+
+      {filteredHighlights.length === 0 && (
+        <div className="text-center py-12">
+          <p className="text-gray-500 text-lg">{searchQuery ? "검색 결과가 없습니다." : "하이라이트가 없습니다."}</p>
+        </div>
+      )}
     </div>
-  );
+  )
 }

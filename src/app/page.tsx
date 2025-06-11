@@ -1,103 +1,155 @@
-import Image from "next/image";
+"use client"
 
-export default function Home() {
+import { useTeam } from "@/contexts/team-context"
+import GameCard from "@/components/game-card"
+import HighlightCard from "@/components/highlight-card"
+import type { Game, Highlight } from "@/types"
+import { TEAMS } from "@/constants/teams"
+import { Calendar, TrendingUp, Clock } from "lucide-react"
+
+// Mock data
+const mockTodayGame: Game = {
+  id: "1",
+  date: "2025-01-09",
+  time: "18:30",
+  home: TEAMS[0], // SSG
+  away: TEAMS[1], // LG
+  stadium: "인천SSG랜더스필드",
+  status: "scheduled",
+}
+
+const mockRecentGames: Game[] = [
+  {
+    id: "2",
+    date: "2025-01-08",
+    time: "18:30",
+    home: TEAMS[0],
+    away: TEAMS[2],
+    stadium: "인천SSG랜더스필드",
+    status: "finished",
+    homeScore: 7,
+    awayScore: 4,
+  },
+  {
+    id: "3",
+    date: "2025-01-07",
+    time: "18:30",
+    home: TEAMS[3],
+    away: TEAMS[0],
+    stadium: "광주-기아챔피언스필드",
+    status: "finished",
+    homeScore: 3,
+    awayScore: 8,
+  },
+  {
+    id: "4",
+    date: "2025-01-06",
+    time: "14:00",
+    home: TEAMS[0],
+    away: TEAMS[4],
+    stadium: "인천SSG랜더스필드",
+    status: "finished",
+    homeScore: 5,
+    awayScore: 2,
+  },
+]
+
+const mockHighlights: Highlight[] = [
+  {
+    id: "1",
+    title: "SSG 랜더스 9회말 극적인 역전승! 최정 결승 홈런",
+    thumbnail: "/placeholder.svg?height=180&width=320",
+    videoUrl: "https://youtube.com/watch?v=example1",
+    date: "2025-01-08",
+    views: 125000,
+    category: "recent",
+    teamCode: "SSG",
+  },
+  {
+    id: "2",
+    title: "이승엽 레전드 홈런 모음집 - KBO 역사상 최고의 순간들",
+    thumbnail: "/placeholder.svg?height=180&width=320",
+    videoUrl: "https://youtube.com/watch?v=example2",
+    date: "2025-01-07",
+    views: 89000,
+    category: "legend",
+  },
+  {
+    id: "3",
+    title: "SSG vs LG 하이라이트 - 박병호 3타점 맹활약",
+    thumbnail: "/placeholder.svg?height=180&width=320",
+    videoUrl: "https://youtube.com/watch?v=example3",
+    date: "2025-01-06",
+    views: 67000,
+    category: "recent",
+    teamCode: "SSG",
+  },
+  {
+    id: "4",
+    title: "한국시리즈 명장면 - 감동의 순간들",
+    thumbnail: "/placeholder.svg?height=180&width=320",
+    videoUrl: "https://youtube.com/watch?v=example4",
+    date: "2025-01-05",
+    views: 234000,
+    category: "legend",
+  },
+]
+
+export default function HomePage() {
+  const { selectedTeam } = useTeam()
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* Hero Section */}
+      <div
+        className="rounded-2xl p-8 mb-8 text-white relative overflow-hidden"
+        style={{ backgroundColor: selectedTeam.color }}
+      >
+        <div className="relative z-10">
+          <h1 className="text-3xl md:text-4xl font-bold mb-2">{selectedTeam.name} 팬을 위한 KBO 앱</h1>
+          <p className="text-lg opacity-90">오늘의 경기부터 최신 하이라이트까지, 모든 야구 소식을 한눈에</p>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+        <div className="absolute right-4 top-4 opacity-20">
+          <div className="w-24 h-24 rounded-full border-4 border-white flex items-center justify-center">
+            <span className="text-2xl font-bold">KBO</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Today's Game */}
+      <section className="mb-8">
+        <div className="flex items-center gap-2 mb-4">
+          <Clock className="w-5 h-5" style={{ color: selectedTeam.color }} />
+          <h2 className="text-2xl font-bold text-gray-900">오늘의 경기</h2>
+        </div>
+        <GameCard game={mockTodayGame} />
+      </section>
+
+      {/* Recent Games */}
+      <section className="mb-8">
+        <div className="flex items-center gap-2 mb-4">
+          <Calendar className="w-5 h-5" style={{ color: selectedTeam.color }} />
+          <h2 className="text-2xl font-bold text-gray-900">최근 경기 결과</h2>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {mockRecentGames.map((game) => (
+            <GameCard key={game.id} game={game} showDate />
+          ))}
+        </div>
+      </section>
+
+      {/* Highlights */}
+      <section>
+        <div className="flex items-center gap-2 mb-4">
+          <TrendingUp className="w-5 h-5" style={{ color: selectedTeam.color }} />
+          <h2 className="text-2xl font-bold text-gray-900">오늘의 하이라이트</h2>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {mockHighlights.map((highlight) => (
+            <HighlightCard key={highlight.id} highlight={highlight} />
+          ))}
+        </div>
+      </section>
     </div>
-  );
+  )
 }
