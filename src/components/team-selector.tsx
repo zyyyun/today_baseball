@@ -22,7 +22,6 @@ export default function TeamSelector() {
           alt={selectedTeam.name}
           width={24}
           height={24}
-          className="rounded-full"
         />
         <span className="font-semibold text-gray-800">{selectedTeam.name}</span>
         <ChevronDown className={`w-4 h-4 transition-transform ${isOpen ? "rotate-180" : ""}`} />
@@ -48,7 +47,6 @@ export default function TeamSelector() {
                   alt={team.name}
                   width={20}
                   height={20}
-                  className="rounded-full"
                 />
                 <span className="font-medium">{team.name}</span>
                 {selectedTeam.code === team.code && (

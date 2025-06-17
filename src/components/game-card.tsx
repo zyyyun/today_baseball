@@ -52,7 +52,6 @@ export default function GameCard({ game, showDate = false }: GameCardProps) {
             alt={game.away.name}
             width={32}
             height={32}
-            className="rounded-full"
           />
           <div>
             <div className="font-semibold text-gray-900">{game.away.name}</div>
@@ -85,7 +84,6 @@ export default function GameCard({ game, showDate = false }: GameCardProps) {
             alt={game.home.name}
             width={32}
             height={32}
-            className="rounded-full"
           />
         </div>
       </div>
