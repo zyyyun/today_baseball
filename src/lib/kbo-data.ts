@@ -1,5 +1,5 @@
 // KBO 데이터 관련 유틸리티 함수들
-import type { TeamRanking, PlayerStats, HistoricalRanking } from "@/types"
+import type { TeamRanking, PlayerStats, HistoricalRanking, Highlight, Game } from "@/types"
 import { TEAMS } from "@/constants/teams"
 
 // KBO 공식 API 또는 크롤링을 통한 실제 데이터 가져오기
@@ -447,43 +447,51 @@ const getMockHistoricalData = (): HistoricalRanking[] => {
 }
 
 // 경기 일정 데이터 가져오기
-export const getScheduleData = async (startDate: string, endDate: string) => {
+export const getScheduleData = async (
+  seasonId?: string | number,
+  gameMonth?: string | number,
+  srIdList: string = "0,9,6",
+  teamId: string = ""
+): Promise<Game[]> => {
   try {
-    const response = await fetch(`${KBO_API_BASE}/Main.asmx/GetScheduleList`, {
-      method: "POST",
+    const year = seasonId?.toString() || new Date().getFullYear().toString()
+    const month = gameMonth 
+      ? (typeof gameMonth === "number" 
+          ? gameMonth < 10 ? `0${gameMonth}` : `${gameMonth}`
+          : gameMonth.length === 1 ? `0${gameMonth}` : gameMonth)
+      : (new Date().getMonth() + 1 < 10 
+          ? `0${new Date().getMonth() + 1}` 
+          : `${new Date().getMonth() + 1}`)
+
+    const queryParams = new URLSearchParams({
+      seasonId: year,
+      gameMonth: month,
+      srIdList,
+    })
+    
+    if (teamId) {
+      queryParams.append("teamId", teamId)
+    }
+
+    const response = await fetch(`/api/schedule?${queryParams.toString()}`, {
+      method: "GET",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        leId: "1",
-        srId: "0",
-        startDate: startDate.replace(/-/g, ""),
-        endDate: endDate.replace(/-/g, ""),
-      }),
     })
 
     if (!response.ok) {
       throw new Error("일정 데이터 로딩 실패")
     }
 
-    const data = await response.json()
+    const result = await response.json()
 
-    return data.map((game: any) => {
-      const homeTeam = TEAMS.find((t) => t.name.includes(game.homeTeamName)) || TEAMS[0]
-      const awayTeam = TEAMS.find((t) => t.name.includes(game.awayTeamName)) || TEAMS[0]
+    if (result.error) {
+      console.error("일정 데이터 로딩 오류:", result.message)
+      return []
+    }
 
-      return {
-        id: game.gameId,
-        date: game.gameDate,
-        time: game.gameTime,
-        home: homeTeam,
-        away: awayTeam,
-        stadium: game.stadium,
-        status: game.gameStatus === "종료" ? "finished" : game.gameStatus === "경기중" ? "live" : "scheduled",
-        homeScore: game.homeScore ? Number.parseInt(game.homeScore) : undefined,
-        awayScore: game.awayScore ? Number.parseInt(game.awayScore) : undefined,
-      }
-    })
+    return result.games || []
   } catch (error) {
     console.error("일정 데이터 로딩 실패:", error)
     return []
@@ -517,4 +525,109 @@ export const getCachedTopBatters = () => getCachedData("top-batters", getTopBatt
 export const getCachedTopPitchers = () => getCachedData("top-pitchers", getTopPitchers)
 
 export const getCachedHistoricalRankings = () => getCachedData("historical-rankings", getHistoricalRankings)
+
+// 검색 키워드 매핑
+const getSearchKeyword = (category: string | undefined, teamName: string): string => {
+  switch (category) {
+    case "highlight":
+      return teamName ? `${teamName} 하이라이트` : "KBO 하이라이트"
+    case "legend":
+      return teamName ? `${teamName} 레전드 영상` : "KBO 레전드 영상"
+    case "recent":
+    default:
+      return teamName || "KBO"
+  }
+}
+
+// 기간 필터 매핑
+const getPublishedAfter = (category: string | undefined): string => {
+  switch (category) {
+    case "recent": {
+      const oneMonthAgo = new Date()
+      oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1)
+      return oneMonthAgo.toISOString()
+    }
+    case "legend":
+      return "none" // 전체 기간
+    case "highlight":
+    default: {
+      const oneYearAgo = new Date()
+      oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1)
+      return oneYearAgo.toISOString()
+    }
+  }
+}
+
+// YouTube API를 통한 하이라이트 가져오기
+export const getHighlights = async (
+  teamCode?: string,
+  category?: string,
+  sortOrder: "date" | "relevance" = "relevance"
+): Promise<{ data: Highlight[], error?: boolean, message?: string }> => {
+  try {
+    const teamNames: { [key: string]: string } = {
+      SSG: "SSG 랜더스",
+      LG: "LG 트윈스",
+      KIA: "기아 타이거즈",
+      KT: "KT 위즈",
+      NC: "NC 다이노스",
+      DOOSAN: "두산 베어스",
+      SAMSUNG: "삼성 라이온즈",
+      LOTTE: "롯데 자이언츠",
+      KIWOOM: "키움 히어로즈",
+      HANWHA: "한화 이글스",
+    }
+
+    const teamName = teamCode ? teamNames[teamCode] : ""
+    const searchKeyword = getSearchKeyword(category, teamName)
+    const publishedAfter = getPublishedAfter(category)
+
+    const queryParams = new URLSearchParams({
+      query: searchKeyword,
+      maxResults: "100",
+      sortOrder: sortOrder,
+      publishedAfter: publishedAfter,
+    })
+
+    if (teamCode) {
+      queryParams.append("teamCode", teamCode)
+    }
+
+    const response = await fetch(`/api/youtube?${queryParams.toString()}`)
+
+    if (!response.ok) {
+      throw new Error("하이라이트 데이터 로딩 실패")
+    }
+
+    const result = await response.json()
+    
+    // 에러 응답인 경우
+    if (result.error) {
+      console.error("YouTube API 오류:", result.message)
+      return { data: [], error: true, message: result.message }
+    }
+    
+    // 정상 응답인 경우 (배열이 직접 반환된 경우)
+    if (Array.isArray(result)) {
+      return { data: result }
+    }
+    
+    // 객체 형태로 반환된 경우
+    return { data: result.data || [], error: result.error, message: result.message }
+  } catch (error) {
+    console.error("하이라이트 데이터 로딩 실패:", error)
+    return { data: [], error: true, message: "하이라이트 데이터를 가져오는데 실패했습니다." }
+  }
+}
+
+// 캐시된 하이라이트 가져오기
+export const getCachedHighlights = async (
+  teamCode?: string,
+  category?: string,
+  sortOrder: "date" | "relevance" = "relevance"
+) => {
+  const cacheKey = `highlights-${teamCode || "all"}-${category || "default"}-${sortOrder || "relevance"}`
+  const result = await getCachedData(cacheKey, () => getHighlights(teamCode, category, sortOrder))
+  return result
+}
 

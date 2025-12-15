@@ -13,6 +13,7 @@ interface HighlightCardProps {
 
 export default function HighlightCard({ highlight, onToggleFavorite, isFavorite = false }: HighlightCardProps) {
   const [isHovered, setIsHovered] = useState(false)
+  const [imageError, setImageError] = useState(false)
 
   const handlePlay = () => {
     // YouTube 영상 재생 로직
@@ -26,7 +27,22 @@ export default function HighlightCard({ highlight, onToggleFavorite, isFavorite 
       onMouseLeave={() => setIsHovered(false)}
     >
       <div className="relative aspect-video bg-gray-200">
-        <Image src={highlight.thumbnail || "/placeholder.svg"} alt={highlight.title} fill className="object-cover" />
+        {highlight.thumbnail && !imageError ? (
+          <Image 
+            src={highlight.thumbnail} 
+            alt={highlight.title} 
+            fill 
+            className="object-cover"
+            unoptimized
+            onError={() => {
+              setImageError(true)
+            }}
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center bg-gray-200">
+            <Play className="w-12 h-12 text-gray-400" />
+          </div>
+        )}
 
         {/* Play Button Overlay */}
         <div
@@ -38,21 +54,6 @@ export default function HighlightCard({ highlight, onToggleFavorite, isFavorite 
           <div className="bg-white bg-opacity-90 rounded-full p-3 hover:bg-opacity-100 transition-all">
             <Play className="w-6 h-6 text-gray-800 ml-1" />
           </div>
-        </div>
-
-        {/* Category Badge */}
-        <div className="absolute top-2 left-2">
-          <span
-            className={`px-2 py-1 rounded-full text-xs font-medium ${
-              highlight.category === "recent"
-                ? "bg-blue-500 text-white"
-                : highlight.category === "legend"
-                  ? "bg-yellow-500 text-white"
-                  : "bg-red-500 text-white"
-            }`}
-          >
-            {highlight.category === "recent" ? "최신" : highlight.category === "legend" ? "레전드" : "즐겨찾기"}
-          </span>
         </div>
 
         {/* Favorite Button */}

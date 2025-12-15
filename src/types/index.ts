@@ -15,6 +15,13 @@ export interface Game {
   status: "scheduled" | "live" | "finished"
   homeScore?: number
   awayScore?: number
+  gameId?: string // KBO 게임 ID
+  seriesType?: "regular" | "postseason" | "exhibition" // 시리즈 타입
+  tvBroadcast?: string // TV 중계 정보
+  radioBroadcast?: string // 라디오 중계 정보
+  gameCenterUrl?: string // 게임센터 링크
+  highlightUrl?: string // 하이라이트 링크
+  note?: string // 비고 (우천취소 등)
 }
 
 export interface Highlight {

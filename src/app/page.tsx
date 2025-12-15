@@ -6,6 +6,8 @@ import HighlightCard from "@/components/highlight-card"
 import type { Game, Highlight } from "@/types"
 import { TEAMS } from "@/constants/teams"
 import { Calendar, TrendingUp, Clock } from "lucide-react"
+import { useEffect, useState } from "react"
+import { getCachedHighlights } from "@/lib/kbo-data"
 
 // Mock data
 const mockTodayGame: Game = {
@@ -54,49 +56,33 @@ const mockRecentGames: Game[] = [
   },
 ]
 
-const mockHighlights: Highlight[] = [
-  {
-    id: "1",
-    title: "SSG 랜더스 9회말 극적인 역전승! 최정 결승 홈런",
-    thumbnail: "/placeholder.svg?height=180&width=320",
-    videoUrl: "https://youtube.com/watch?v=example1",
-    date: "2025-01-08",
-    views: 125000,
-    category: "recent",
-    teamCode: "SSG",
-  },
-  {
-    id: "2",
-    title: "이승엽 레전드 홈런 모음집 - KBO 역사상 최고의 순간들",
-    thumbnail: "/placeholder.svg?height=180&width=320",
-    videoUrl: "https://youtube.com/watch?v=example2",
-    date: "2025-01-07",
-    views: 89000,
-    category: "legend",
-  },
-  {
-    id: "3",
-    title: "SSG vs LG 하이라이트 - 박병호 3타점 맹활약",
-    thumbnail: "/placeholder.svg?height=180&width=320",
-    videoUrl: "https://youtube.com/watch?v=example3",
-    date: "2025-01-06",
-    views: 67000,
-    category: "recent",
-    teamCode: "SSG",
-  },
-  {
-    id: "4",
-    title: "한국시리즈 명장면 - 감동의 순간들",
-    thumbnail: "/placeholder.svg?height=180&width=320",
-    videoUrl: "https://youtube.com/watch?v=example4",
-    date: "2025-01-05",
-    views: 234000,
-    category: "legend",
-  },
-]
-
 export default function HomePage() {
   const { selectedTeam } = useTeam()
+  const [highlights, setHighlights] = useState<Highlight[]>([])
+  const [loading, setLoading] = useState(true)
+  const [apiError, setApiError] = useState(false)
+
+  useEffect(() => {
+    const fetchHighlights = async () => {
+      setLoading(true)
+      setApiError(false)
+      try {
+        const result = await getCachedHighlights(selectedTeam.code)
+        setHighlights(result.data || [])
+        if (result.error) {
+          setApiError(true)
+        }
+      } catch (error) {
+        console.error("하이라이트 로딩 실패:", error)
+        setHighlights([])
+        setApiError(true)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchHighlights()
+  }, [selectedTeam.code])
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -144,11 +130,34 @@ export default function HomePage() {
           <TrendingUp className="w-5 h-5" style={{ color: selectedTeam.color }} />
           <h2 className="text-2xl font-bold text-gray-900">오늘의 하이라이트</h2>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {mockHighlights.map((highlight) => (
-            <HighlightCard key={highlight.id} highlight={highlight} />
-          ))}
-        </div>
+        {loading ? (
+          <div className="text-center py-8 text-gray-500">로딩 중...</div>
+        ) : apiError ? (
+          <div className="text-center py-8">
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 max-w-2xl mx-auto">
+              <p className="text-yellow-800 font-medium mb-2">YouTube API가 활성화되지 않았습니다</p>
+              <p className="text-yellow-700 text-sm mb-4">
+                Google Cloud Console에서 YouTube Data API v3를 활성화해주세요.
+              </p>
+              <a
+                href="https://console.cloud.google.com/apis/library/youtube.googleapis.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 hover:text-blue-800 underline text-sm"
+              >
+                YouTube Data API v3 활성화하기 →
+              </a>
+            </div>
+          </div>
+        ) : highlights.length === 0 ? (
+          <div className="text-center py-8 text-gray-500">하이라이트가 없습니다.</div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {highlights.map((highlight) => (
+              <HighlightCard key={highlight.id} highlight={highlight} />
+            ))}
+          </div>
+        )}
       </section>
     </div>
   )
